@@ -2,12 +2,7 @@ import java.util.*;
 
 /**
  * A binary search tree of integers.
- *
- * In addition to usual methods like insert and hasValue, this class 
- * also includes some strange methods that wouldn't normally go in a
- * search tree. These are included because they are good practice
- * exercises.
- *
+ * Written in Sublime
  * @author Mira Krishnaiah
  */
 public class IntBinarySearchTree{
