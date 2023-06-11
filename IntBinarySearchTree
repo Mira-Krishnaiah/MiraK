@@ -1,0 +1,614 @@
+import java.util.*;
+
+/**
+ * A binary search tree of integers.
+ *
+ * In addition to usual methods like insert and hasValue, this class 
+ * also includes some strange methods that wouldn't normally go in a
+ * search tree. These are included because they are good practice
+ * exercises.
+ *
+ * @author Mira Krishnaiah
+ */
+public class IntBinarySearchTree{
+    // --------------------------------------------------------------------
+    // Private classes
+    // --------------------------------------------------------------------
+
+    /** 
+     * Data-only class to store Nodes. 
+     * Only accessible within IntBinarySearchTree.
+     */
+    private static class Node {
+        public int data;
+        public Node left;
+        public Node right;
+        
+        public Node(int data) {
+            this.data = data;
+            this.left = null;
+            this.right = null;
+        }
+    }
+    
+    // --------------------------------------------------------------------
+    // Private state variables
+    // --------------------------------------------------------------------
+    private Node root;
+
+    // --------------------------------------------------------------------
+    // Public methods
+    // --------------------------------------------------------------------
+    /**
+     * Construct an empty search tree.
+     */
+    public IntBinarySearchTree() {
+        root = null;
+    }
+
+    /**
+     * Construct a search tree from a given array of values.
+     * @param  inputArray  array of values to be used to construct the tree
+     */
+    public IntBinarySearchTree(int[] inputArray) {
+        if(inputArray.length == 0){
+            root = null;
+        }
+        else{
+            root = new Node(inputArray[0]);
+            for(int i = 1; i<inputArray.length; i++){
+                insert(inputArray[i]);
+            }
+        }
+    }
+
+
+    /**
+     * Inserts a value into the tree
+     * @param currentNode gives the current node to check the value of it
+     * @param data the value to insert
+     */
+    public void insert(int data){
+        //Checks the empty tree case
+        if(root == null){
+            root = new Node(data);
+        }
+        else{
+            insertPrivate(root, data);   
+        }
+    }
+
+    /**
+     * Finds a value into the tree
+     * @param data the value to insert
+     * @return Whether the tree contains the given value
+     */
+    public boolean find(int data){
+        return findPrivate(root, data);
+    }
+
+    /**
+     * Deletes a value in the tree
+     * @param value the value to insert
+     * @return Whether the tree contains + deletes the given value
+     * Yes, it is WAY too long
+     */
+    public boolean delete(int value){
+        Node currentNode = root;
+        //Checks the value exists
+        if(find(value) == false){ 
+            return false;
+        }
+        Node parentNode = null;
+        Node removingNode = getNode(root, value);
+
+
+        //Special case for the root if it only has one child
+        if(removingNode == root && ((removingNode.left != null && removingNode.right == null) || removingNode.left == null && removingNode.right != null)){
+            if(removingNode.left == null){
+                root = removingNode.right;
+                removingNode.right = null;
+            }
+            else{
+                root = removingNode.left;
+                removingNode.left = null;
+            }
+            return true;
+        }
+
+        //The case if the removing node has two children
+        if(removingNode.left != null && removingNode.right != null){
+            Node smallestNode = getSmallestNode(removingNode.right); //finds the smallest node on the right subtree 
+            parentNode = findParentNode(removingNode, smallestNode.data); //Finds the parent node of the smallest node
+            removingNode.data = smallestNode.data; //Sets the removing node to be the smallest node
+            removingNode = smallestNode; //Now the new removing node is the former smaller node
+            //If the removing node has a right sub-tree child (it cant have a left because it was the former smallest), then move the parent pointer to the removing node.right
+            if(removingNode.right != null){
+                if(removingNode.data < parentNode.data){
+                    parentNode.left = removingNode.right;
+                    removingNode.right = null;
+                }
+                else{
+                    parentNode.right = removingNode.right;
+                    removingNode.right = null;
+                }
+                return true;
+            }
+        }
+        return(pruneNode(removingNode));
+    }
+
+    /**
+     * Sums the values in the tree
+     * @return The sum of the data of the nodes
+     */
+    public int sum(){
+        return sumPrivate(root);
+    }
+    
+    /**
+     * Counts the nodes in the tree
+     * @return The number of nodes
+     */
+    public int countNodes(){
+        return countNodePrivate(root);
+    }
+
+    /**
+     * Counts the branches in the tree
+     * @return The number of branches
+     */
+    public int countBranches(){
+        //Checks the empty tree case
+        if(root == null){
+            return 0;
+        }
+        return countNodes()-1;
+    }
+
+    /**
+     * Counts the leaves in the tree
+     * @return The number of leaves
+     */
+    public int countLeaves(){
+        return countLeavesPrivate(root);
+    }
+
+    /**
+     * Counts the height in the tree
+     * @return The number of levels
+     * **THIS IS ASSUMING THE FIRST ROOT LEVEL IS LEVEL 1, AND AN EMPTY TREE HAS HEIGHT 0**
+     */
+    public int height(){
+        return heightPrivate(root); //First level is height 0
+    }
+
+    /**
+     * Checks if all nodes have 2 children
+     * @return Whether all nodes have either 2 or no children
+     */
+    public boolean isFull(){
+
+        if(countNodes() == (Math.pow(2, height())-1)){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether there is the same amount of nodes + same height on both sides of the tree
+     * @return Whether both sides are equal
+     */
+    public boolean isBalanced(){
+        Node newroot = createHeightTree(root);
+        printTree(newroot, 0);
+        return isBalancedPrivate(newroot); //Inputs the root node of the HEIGHT tree
+    }
+
+    /*
+    public void traverseInOrder(){
+        traverseInOrderPrivate(root);
+    }
+    */
+
+    /**
+     * Sets up this tree to be a sample binary search tree. This is just for
+     * testing purposes.
+     */
+    public void setToSampleTree1() {
+        root = new Node(52);
+        root.left = new Node(29);
+        root.left.left = new Node(10);
+        root.left.right = new Node(37);
+        root.left.left.right = new Node(17);
+        root.right = new Node(75);
+        root.right.left = new Node(62);
+        root.right.right = new Node(92);
+        root.right.left.left = new Node(58);
+        root.right.left.right = new Node(68);
+    }
+    
+    /**
+     * Sets up this tree to be a sample binary search tree. This is just for
+     * testing purposes.
+     */
+    public void setToSampleTree2() {
+        root = new Node(5);
+        root.left = new Node(1);
+        root.left.right = new Node(4);
+        root.left.right.left = new Node(3);
+        root.left.right.left.left = new Node(2);
+    }
+    
+    /**
+     * Sets up this tree to be a sample binary search tree. This is just for
+     * testing purposes.
+     */
+    public void setToSampleTree3() {
+        root = new Node(10);
+        root.left = new Node(8);
+        root.left.right = new Node(9);
+        root.left.left = new Node(6);
+        root.left.left.right = new Node(7);
+        root.left.left.left = new Node(4);
+        root.left.left.left.right = new Node(5);
+
+        root.right = new Node(20);
+        root.right.left = new Node(15);
+        root.right.right = new Node(22);
+        root.right.right.right = new Node(25);
+        root.right.right.left = new Node(23);
+
+    }
+    
+    /**
+     * Return the values as a string.
+     * 
+     * The format is as follows: "12 (4 16 (13 _))"
+     * Left to right, inorder traversal:
+     *  Start with the root, each pair of children is enclosed in parentheses
+     *  Any empty spaces are represented with an underscore.
+     * 
+     * sampleTree2 from above is represented by "5 (1 (_ 4 (3 (2 _) _)) _)"
+     * @return  String  
+     */
+    @Override
+    public String toString() {
+        return toStringRecursion(root);
+    }
+
+    /**
+     * Prints the tree on its side, root on the left.
+     */ 
+    public void print(){
+        printTree(root, 0);
+    }
+
+
+    // --------------------------------------------------------------------
+    // Private methods
+    // --------------------------------------------------------------------
+
+    // Hint: All recursive solutions rely on a call to a private method!
+
+
+    /**
+     * Inserts a new value
+     * @param currentNode The node you're currenetly on
+     * @param value Desired value
+     */
+    private void insertPrivate(Node currentNode, int value){
+        //Goes to desired position by checking if the value is greater than the current node's value
+        if(value >= currentNode.data){
+            if(currentNode.right == null){ //If reached the desired position, put the node in
+                currentNode.right = new Node(value);
+            }
+            else{
+                insertPrivate(currentNode.right, value);
+            }
+        }
+        else{ //Same as before but if the value is less than
+            if(currentNode.left == null){
+                currentNode.left = new Node(value);
+            }
+            else{
+                insertPrivate(currentNode.left, value);
+            }
+        }
+    }
+
+    /**
+     * Finds a value
+     * @param currentNode The node you're currenetly on
+     * @param value Desired value
+     * @return True/false
+     */
+    private boolean findPrivate(Node currentNode, int value){
+        if(currentNode == null){
+            return false; //If the node doesn't exist
+        }
+        if(value == currentNode.data){
+            return true;
+        }
+        //Keep looping until you find the node
+        else if(value < currentNode.data){
+            return findPrivate(currentNode.left, value);
+        }
+
+        else{
+            return findPrivate(currentNode.right, value);
+        }
+    }
+
+    /**
+     * Finds the parent of a value
+     * @param currentNode The node you're currenetly on
+     * @param value Desired value
+     * @return Node
+     */
+    private Node findParentNode(Node currentNode, int value){
+        //Checking if the value to the right OR left is the given value
+        if(((currentNode.left != null) && (value == currentNode.left.data)) || ((currentNode.right != null) && (value == currentNode.right.data))){
+            return currentNode;
+        }
+        //If not, continue searching
+        else if(value < currentNode.data){
+            return findParentNode(currentNode.left, value);
+        }
+
+        else{
+            return findParentNode(currentNode.right, value);
+        }
+    }
+
+    /**
+     * Gets the node that has the desired value
+     * @param currentNode The node you're currenetly on
+     * @param value Desired value
+     * @return Node
+     */
+    private Node getNode(Node currentNode, int value){
+        if(value == currentNode.data){
+            return currentNode; //If you find the value, return it
+        }
+        //If not, continue searching
+        else if(value < currentNode.data){
+            return getNode(currentNode.left, value); 
+        }
+
+        else{
+            return getNode(currentNode.right, value);
+        }
+    }
+
+    /**
+     * Gets the node with the smallest value
+     * @param currentNode The node you're currenetly on
+     * @return Node
+     */
+    private Node getSmallestNode(Node currentNode){
+        if(currentNode.left == null){
+            return currentNode;
+        }
+
+        return getSmallestNode(currentNode.left); //Keep going to the left to get the smallest node of a parent
+    }
+
+    /**
+     * Sums up all the values of the nodes in the tree
+     * @param currentNode The node you're currenetly on
+     * @return int
+     */
+    private int sumPrivate(Node currentNode){
+        if(currentNode == null){
+            return 0;
+        }
+
+        return currentNode.data + sumPrivate(currentNode.left) + sumPrivate(currentNode.right); //Adds all the values of the nodes
+    }
+
+    /**
+     * Counts the nodes in the tree
+     * @param currentNode The node you're currenetly on
+     * @return int
+     */
+    private int countNodePrivate(Node currentNode){
+        if(currentNode == null){
+            return 0;
+        }
+
+        return 1 + countNodePrivate(currentNode.left) + countNodePrivate(currentNode.right); //For each node, add one
+    }
+
+
+    /**
+     * Counts the height of the tree
+     * @param currentNode The node you're currenetly on
+     * @return int
+     */
+    private int heightPrivate(Node currentNode){
+        if(currentNode == null){
+            return 0;
+        }
+
+        return(Math.max(1 + heightPrivate(currentNode.left), 1 + heightPrivate(currentNode.right))); //Gets the max of the lengths of paths
+    }
+
+
+    /**
+     * Counts the leaves in the tree
+     * @param currentNode The node you're currenetly on
+     * @return int
+     */
+    private int countLeavesPrivate(Node currentNode){
+        if(currentNode == null){
+            return 0;
+        }
+        if(currentNode.left == null && currentNode.right == null){
+            return 1; //Add one if it has no children
+        }
+
+        return countLeavesPrivate(currentNode.left) + countLeavesPrivate(currentNode.right);
+    }
+
+    /**
+     * Checks if the tree is full
+     * @param currentNode The node you're currenetly on
+     * @return True/false
+     */
+    private boolean isFullPrivate(Node currentNode){
+        if(currentNode == null){
+            return true;
+        }
+
+        if((currentNode.left == null && currentNode.right == null) || (currentNode.left != null && currentNode.right != null)){
+            return true; //If the node has either 2 or 0 children, return true
+        }
+
+        return isFullPrivate(currentNode.left) && isFullPrivate(currentNode.right);
+    }
+
+    private boolean pruneNode(Node removingNode){
+        Node parentNode = null;
+        //If it only has a left child, then point the parent node at the child of the removing node
+        if(removingNode.left != null && removingNode.right == null){
+             parentNode = findParentNode(root, removingNode.data);
+             if(removingNode.data < parentNode.data){
+                parentNode.left = removingNode.left;   
+             }
+             else{
+                parentNode.right = removingNode.left;
+             }
+             removingNode.left = null;
+             return true;
+        }
+        //Same thing as the previous case, but if it only has a subtree on the right
+        else if(removingNode.left == null && removingNode.right != null){
+            parentNode = findParentNode(root, removingNode.data);
+            if(removingNode.data < parentNode.data){
+               parentNode.left = removingNode.right;   
+            }
+            else{
+               parentNode.right = removingNode.right;
+            }
+            removingNode.right = null;
+            return true;
+        }
+        //If it has no children
+        else{
+            if(removingNode == root){
+                root = null;
+                return true;
+            }
+            parentNode = findParentNode(root, removingNode.data);
+        }
+
+        //The remaining node that gets to this point will be a leaf, so you can simply prune it
+        if(removingNode.data<parentNode.data){
+            parentNode.left = null;
+        }
+        else{
+            parentNode.right = null;
+        }
+        return true;
+    }
+
+    /**
+     * Checks if the tree is balanced
+     * @param currentNode The node of the NEW height tree
+     * @return True/false
+     */
+    private boolean isBalancedPrivate(Node currentNode){
+        //Various cases of a tree
+        if(currentNode == null || (currentNode.left == null && currentNode.right == null)){
+            return true;
+        }
+
+        //If it gets near the end and one next node is null while the other is more than one, than it's false
+        if((currentNode.left == null && currentNode.right.data == 1) || (currentNode.right == null && currentNode.left.data == 1)){
+            return true;
+        }
+        else if(currentNode.left == null || currentNode.right == null){
+            return false;
+        }
+
+        if(Math.abs(currentNode.left.data - currentNode.right.data) > 1){
+            return false;
+        }
+        else{
+            return (isBalancedPrivate(currentNode.left) && isBalancedPrivate(currentNode.right));
+        }
+        
+    }
+
+    /**
+     * Creates the height tree
+     * @param currentNode the node of the original tree
+     * @return The root node of the new height tree
+     */
+    private Node createHeightTree(Node currentNode){
+        if(currentNode == null){
+            return null;
+        }
+
+        //For every node on the original tree, make a new node on the new tree that has the height of the original tree
+        Node newTreeNode = new Node(nodeHeight(currentNode));
+        newTreeNode.left = createHeightTree(currentNode.left); 
+        newTreeNode.right = createHeightTree(currentNode.right);
+
+        return newTreeNode;
+    }
+
+    /**
+     * Gets the height of the tree
+     * @param currentNode The current node of the original tree
+     * @return the height FROM THE BOTTOM
+     */
+    private int nodeHeight(Node currentNode){
+        if(currentNode == null){
+            return 0;
+        }
+
+        return(Math.max(1 + nodeHeight(currentNode.left), 1 + nodeHeight(currentNode.right))); //Gets the max of the lengths of paths
+    }
+
+    private String toStringRecursion(Node root) {
+        
+        String contents = "";
+
+        if (root == null) {
+            return contents;
+        }
+        contents += root.data;
+
+        // Conditionals are only here to keep nice spacing 
+        // (underscores when a child does not exist)
+        if (root.left != null && root.right == null){
+            contents += " (" + toStringRecursion(root.left) + " _)";
+        } 
+        else if (root.left == null && root.right != null){
+            contents += " (_ " + toStringRecursion(root.right) + ")";
+        }
+        else if (root.left != null && root.right != null) {
+            contents +=  " (" + toStringRecursion(root.left) + " " + toStringRecursion(root.right) +  ")";
+        }
+        return contents;
+        
+    }
+
+    // prints tree on its side, root on the left.
+    // right to left inorder traversal
+    private void printTree(Node tree, int depth){
+        
+        if (tree == null){
+            return;
+        }
+        printTree(tree.right, depth + 1);   // Right side printed on top
+
+        for (int i = 0; i < depth; i++){    // Manage indentations
+            System.out.print("   ");
+        }   
+        System.out.println(tree.data);      // Current data
+        printTree(tree.left, depth + 1);    // Left side on bottom
+    }
+}
